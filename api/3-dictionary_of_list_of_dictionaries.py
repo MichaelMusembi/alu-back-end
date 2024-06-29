@@ -1,23 +1,37 @@
 #!/usr/bin/python3
-"""
-    python script that exports data in the JSON format
-"""
 import json
 import requests
 
-if __name__ == "__main__":
-    url = "https://jsonplaceholder.typicode.com/"
-    users = requests.get(url + "users").json()
-    """
-        export to JSON
-    """
+# Fetch users
+users_url = 'https://jsonplaceholder.typicode.com/users'
+users_response = requests.get(users_url)
+users = users_response.json()
 
-    with open("todo_all_employees.json", "w") as jsonfile:
-        json.dump({
-            u.get("id"): [{
-                "task": t.get("title"),
-                "completed": t.get("completed"),
-                "username": u.get("username")
-            } for t in requests.get(url + "todos",
-                                    params={"userId": u.get("id")}).json()]
-            for u in users}, jsonfile)
+# Fetch todos
+todos_url = 'https://jsonplaceholder.typicode.com/todos'
+todos_response = requests.get(todos_url)
+todos = todos_response.json()
+
+# Dictionary to store all tasks of all users
+all_tasks = {}
+
+for user in users:
+    user_id = user['id']
+    username = user['username']
+    user_tasks = []
+
+    for task in todos:
+        if task['userId'] == user_id:
+            task_info = {
+                "username": username,
+                "task": task['title'],
+                "completed": task['completed']
+            }
+            user_tasks.append(task_info)
+
+    all_tasks[user_id] = user_tasks
+
+# Write to JSON file
+with open('todo_all_employees.json', 'w') as json_file:
+    json.dump(all_tasks, json_file)
+
