@@ -1,48 +1,45 @@
+#!/usr/bin/python3
 import requests
-import sys
 
-def get_employee_todo_progress(employee_id):
-    try:
-        # Replace 'API_BASE_URL' with the actual API base URL
-        API_BASE_URL = "https://jsonplaceholder.typicode.com"
-        
-        # Fetch employee information
-        user_response = requests.get(f"{API_BASE_URL}/users/{employee_id}")
-        if user_response.status_code != 200:
-            print(f"Error: Unable to fetch employee information for ID {employee_id}")
-            return
-        
-        user_data = user_response.json()
-        employee_name = user_data.get('name')
+# Constants
+USER_ID = 1
+TODO_URL = 'https://jsonplaceholder.typicode.com/todos'
+USER_URL = f'https://jsonplaceholder.typicode.com/users/{USER_ID}'
 
-        # Fetch TODO list for the employee
-        todos_response = requests.get(f"{API_BASE_URL}/todos", params={"userId": employee_id})
-        if todos_response.status_code != 200:
-            print(f"Error: Unable to fetch TODO list for employee ID {employee_id}")
-            return
+# Function to fetch data from the given URL
+def fetch_data(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to retrieve data from {url}, status code: {response.status_code}")
+        return None
 
-        todos_data = todos_response.json()
+# Fetch employee data
+employee = fetch_data(USER_URL)
+if employee is None:
+    print("Failed to retrieve employee data.")
+    exit(1)  # Exit the script if employee data cannot be retrieved
 
-        # Calculate number of completed and total tasks
-        total_tasks = len(todos_data)
-        completed_tasks = [task for task in todos_data if task['completed']]
-        number_of_done_tasks = len(completed_tasks)
+# Fetch todos data
+todos = fetch_data(TODO_URL)
+if todos is None:
+    print("Failed to retrieve todos data.")
+    exit(1)  # Exit the script if todos data cannot be retrieved
 
-        # Print the TODO list progress
-        print(f"Employee {employee_name} is done with tasks({number_of_done_tasks}/{total_tasks}):")
-        for task in completed_tasks:
-            print(f"\t {task['title']}")
+# Initialize counters
+todo_counter = 0
+completed_counter = 0
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+# Process todos
+for todo in todos:
+    if todo['userId'] == USER_ID:
+        todo_counter += 1
+        if todo['completed']:
+            completed_counter += 1
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python3 script.py <employee_id>")
-        sys.exit(1)
-    
-    try:
-        employee_id = int(sys.argv[1])
-        get_employee_todo_progress(employee_id)
-    except ValueError:
-        print("Error: Employee ID must be an integer")
+# Print the results
+print(f"Employee {employee['name']} is done with tasks ({completed_counter}/{todo_counter}):")
+for todo in todos:
+    if todo['userId'] == USER_ID and todo['completed']:
+        print(f"\t {todo['title']}")
