@@ -1,45 +1,36 @@
 #!/usr/bin/python3
+"""Script to get todos for a user from API"""
+
 import requests
+import sys
 
-# Constants
-USER_ID = 1
-TODO_URL = 'https://jsonplaceholder.typicode.com/todos'
-USER_URL = f'https://jsonplaceholder.typicode.com/users/{USER_ID}'
 
-# Function to fetch data from the given URL
-def fetch_data(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Failed to retrieve data from {url}, status code: {response.status_code}")
-        return None
+def main():
+    """main function"""
+    user_id = int(sys.argv[1])
+    todo_url = 'https://jsonplaceholder.typicode.com/todos'
+    user_url = 'https://jsonplaceholder.typicode.com/users/{}'.format(user_id)
 
-# Fetch employee data
-employee = fetch_data(USER_URL)
-if employee is None:
-    print("Failed to retrieve employee data.")
-    exit(1)  # Exit the script if employee data cannot be retrieved
+    response = requests.get(todo_url)
 
-# Fetch todos data
-todos = fetch_data(TODO_URL)
-if todos is None:
-    print("Failed to retrieve todos data.")
-    exit(1)  # Exit the script if todos data cannot be retrieved
+    total_questions = 0
+    completed = []
+    for todo in response.json():
 
-# Initialize counters
-todo_counter = 0
-completed_counter = 0
+        if todo['userId'] == user_id:
+            total_questions += 1
 
-# Process todos
-for todo in todos:
-    if todo['userId'] == USER_ID:
-        todo_counter += 1
-        if todo['completed']:
-            completed_counter += 1
+            if todo['completed']:
+                completed.append(todo['title'])
 
-# Print the results
-print(f"Employee {employee['name']} is done with tasks ({completed_counter}/{todo_counter}):")
-for todo in todos:
-    if todo['userId'] == USER_ID and todo['completed']:
-        print(f"\t {todo['title']}")
+    user_name = requests.get(user_url).json()['name']
+
+    printer = ("Employee {} is done with tasks({}/{}):".format(user_name,
+               len(completed), total_questions))
+    print(printer)
+    for q in completed:
+        print("\t {}".format(q))
+
+
+if __name__ == '__main__':
+    main()
